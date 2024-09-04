@@ -8,87 +8,102 @@ import pandas as pd
 import numpy as np
 from numpy import nan
 
-# API Authentication/Token
-username = st.secrets['username']
-password = st.secrets['password']
-token_url = 'https://sandbox-api.webops.net/api/1.0/token'
+def webops_api_request(picker_start_date, picker_end_date):
 
-token_resp = requests.post(token_url, data={}, auth=(username, password))
-access_token = token_resp.headers.get('Access_token')
+    picker_start_date = picker_start_date.strftime('%Y-%m-%d') + ' 00:00'
+    picker_end_date = picker_end_date.strftime('%Y-%m-%d') + ' 23:59'
 
-# API Request
-now = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-now_id = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    # API Authentication/Token
+    username = st.secrets['username']
+    password = st.secrets['password']
+    token_url = 'https://sandbox-api.webops.net/api/1.0/token'
 
-url = 'https://sandbox-api.webops.net/api/1.0/cases'
+    token_resp = requests.post(token_url, data={}, auth=(username, password))
+    access_token = token_resp.headers.get('Access_token')
 
-data = {}
-data['timestamp']= now
-data['messageId'] = now_id
-data['manufacturerId']= '1015'
-data['branchId'] = '140'
-data['caseStatuses'] = 'Kits Assigned'
-data['surgeryDateMin'] = '2024-08-11 00:00'
-data['surgeryDateMax'] = '2024-08-17 00:00'
-# data['ids'] = '24243968'
-data['includeProductSystems'] = True
-data['limit'] = '500'
-data['page'] = '1'
+    # API Request
+    now = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+    now_id = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
-headers = {}
-headers['Access_token'] = access_token
+    url = 'https://sandbox-api.webops.net/api/1.0/cases'
 
-# request
-res = requests.post(url, json=data, headers=headers, auth=HTTPBasicAuth(username, password))
-res.content
+    data = {}
+    data['timestamp']= now
+    data['messageId'] = now_id
+    data['manufacturerId']= '1015'
+    data['branchId'] = '140'
+    data['caseStatuses'] = 'Kits Assigned'
+    # data['surgeryDateMin'] = '2024-08-11 00:00'
+    # data['surgeryDateMax'] = '2024-08-17 00:00'
+    data['surgeryDateMin'] = picker_start_date
+    data['surgeryDateMax'] = picker_end_date
+    # data['ids'] = '24243968'
+    data['includeProductSystems'] = True
+    data['limit'] = '500'
+    data['page'] = '1'
 
-# convert to json
-res_json = json.loads(res.content.decode('utf-8'))
+    headers = {}
+    headers['Access_token'] = access_token
 
-# convert json to df
-df = pd.json_normalize(res_json)
+    # request
+    res = requests.post(url, json=data, headers=headers, auth=HTTPBasicAuth(username, password))
+    res.content
 
-# Explode series
-df = df.explode('cases')
+    # convert to json
+    res_json = json.loads(res.content.decode('utf-8'))
 
-# convert to string
-df['cases'] = df['cases'].astype(str) 
+    # convert json to df
+    df = pd.json_normalize(res_json)
 
-# map nested columns
-df['cases'] = df['cases'].map(lambda x: eval(x) if pd.notnull(x) else x)
-df = pd.concat([df, df.pop('cases').apply(pd.Series)], axis=1)
+    # Explode series
+    df = df.explode('cases')
 
-# ---
+    # ---
 
-# Explode series
-df = df.explode('productSystems')
+    # check if results
+    if type(df.cases[0]) is float: 
+        return 'All Kits Complete'
+    else:
+        # convert to string
+        df['cases'] = df['cases'].astype(str) 
 
-# convert to string
-df['productSystems'] = df['productSystems'].astype(str) 
+        # map nested columns
+        df['cases'] = df['cases'].map(lambda x: eval(x) if pd.notnull(x) else x)
+        df = pd.concat([df, df.pop('cases').apply(pd.Series)], axis=1)
 
-# map nested columns
-df['productSystems'] = df['productSystems'].map(lambda x: eval(x) if pd.notnull(x) else x)
-df = pd.concat([df, df.pop('productSystems').apply(pd.Series)], axis=1)
+        # ---
 
-# ---
+        # Explode series
+        df = df.explode('productSystems')
 
-# Explode series
-df = df.explode('kitFamilies')
+        # convert to string
+        df['productSystems'] = df['productSystems'].astype(str) 
 
-# convert to string
-df['kitFamilies'] = df['kitFamilies'].astype(str) 
+        # map nested columns
+        df['productSystems'] = df['productSystems'].map(lambda x: eval(x) if pd.notnull(x) else x)
+        df = pd.concat([df, df.pop('productSystems').apply(pd.Series)], axis=1)
 
-# map nested columns
-df['kitFamilies'] = df['kitFamilies'].map(lambda x: eval(x) if pd.notnull(x) else x)
-df = pd.concat([df, df.pop('kitFamilies').apply(pd.Series)], axis=1)
+        # ---
 
-# ---
+        # Explode series
+        df = df.explode('kitFamilies')
 
-# detect Assigned Kits
-df['kitAssigned'] = np.where(df['kitId'].isnull(), False, True)
+        # convert to string
+        df['kitFamilies'] = df['kitFamilies'].astype(str) 
 
-# results
-df_results = df[df['kitAssigned'] == True]
-df_results = df_results[['branchId', 'id', 'surgeryDate', 'caseType', 'name', 'kitAssigned']]
-df_results['id'] = df_results['id'].astype(str)
-df_results = df_results.rename(columns={'id': 'caseId', 'name': 'kitName'})
+        # map nested columns
+        df['kitFamilies'] = df['kitFamilies'].map(lambda x: eval(x) if pd.notnull(x) else x)
+        df = pd.concat([df, df.pop('kitFamilies').apply(pd.Series)], axis=1)
+
+        # ---
+
+        # detect Assigned Kits
+        df['kitAssigned'] = np.where(df['kitId'].isnull(), False, True)
+
+        # results
+        df_results = df[df['kitAssigned'] == True]
+        df_results = df_results[['branchId', 'id', 'surgeryDate', 'caseType', 'name', 'kitAssigned']]
+        df_results['id'] = df_results['id'].astype(str)
+        df_results = df_results.rename(columns={'id': 'caseId', 'name': 'kitName'})
+
+        return df_results
