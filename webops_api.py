@@ -62,7 +62,7 @@ def webops_api_request(picker_start_date, picker_end_date):
 
     # check if results
     if type(df.cases[0]) is float: 
-        return 'All Kits Complete'
+        return -1
     else:
         # convert to string
         df['cases'] = df['cases'].astype(str) 

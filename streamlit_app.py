@@ -22,4 +22,11 @@ except:
 # api request
 if picker_end_date:
     df_results = webops_api.webops_api_request(picker_start_date, picker_end_date)
-    df_results
+    
+    if type(df_results) is int:
+        if df_results == -1:
+            st.success('All kits have been completed!')
+        else:
+            'unknown response code'
+    else:
+        df_results
