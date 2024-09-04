@@ -1,6 +1,6 @@
 import streamlit as st
+import webops_api
 
-st.title("🎈 My new app")
-st.write(
-    "Let's start building! For help and inspiration, head over to [docs.streamlit.io](https://docs.streamlit.io/)."
-)
+st.title("Stryker Kit Checklist")
+
+st.dataframe(webops_api.df_results, use_container_width=True)
