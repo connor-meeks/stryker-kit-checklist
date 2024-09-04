@@ -98,7 +98,10 @@ def webops_api_request(picker_start_date, picker_end_date):
         # ---
 
         # detect Assigned Kits
-        df['kitAssigned'] = np.where(df['kitId'].isnull(), False, True)
+        if 'kitId' in df:
+            df['kitAssigned'] = np.where(df['kitId'].isnull(), False, True)
+        else:
+            df['kitAssigned'] = False
 
         # results
         df_results = df[df['kitAssigned'] == True]
