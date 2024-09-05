@@ -1,10 +1,12 @@
 import streamlit as st
-import webops_api
+import webops_cases, webops_branches
 import datetime
 import surgery_dates
 
+# title
 st.title("Stryker Kit Checklist")
 
+# date picker
 now = datetime.datetime.now()
 d = st.date_input(
     "Select surgery dates",
@@ -19,9 +21,9 @@ try:
 except:
     picker_end_date = picker_start_date
 
-# api request
+# cases request
 if picker_end_date:
-    df_results = webops_api.webops_api_request(picker_start_date, picker_end_date)
+    df_results = webops_cases.webops_cases_request(picker_start_date, picker_end_date)
     
     if type(df_results) is int:
         if df_results == -1:
@@ -30,3 +32,7 @@ if picker_end_date:
             'unknown response code'
     else:
         df_results
+
+# branches request
+df_branch = webops_branches.webops_branches_request()
+df_branch 

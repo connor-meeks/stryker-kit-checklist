@@ -10,7 +10,7 @@ from numpy import nan
 
 import webops_api_token
 
-def webops_api_request(picker_start_date, picker_end_date):
+def webops_cases_request(picker_start_date, picker_end_date):
 
     picker_start_date = picker_start_date.strftime('%Y-%m-%d') + ' 00:00'
     picker_end_date = picker_end_date.strftime('%Y-%m-%d') + ' 23:59'
