@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 from numpy import nan
 
-import webops_api_token, webops_branches
+import webops_api_token, webops_branches, webops_kits
 
 def webops_cases_request(picker_start_date, picker_end_date, branch_ids):
 
@@ -33,14 +33,10 @@ def webops_cases_request(picker_start_date, picker_end_date, branch_ids):
         data['timestamp']= now
         data['messageId'] = now_id
         data['manufacturerId']= '1015'
-        # data['branchId'] = '140'
         data['branchId'] = i
         data['caseStatuses'] = 'Kits Assigned'
-        # data['surgeryDateMin'] = '2024-08-11 00:00'
-        # data['surgeryDateMax'] = '2024-08-17 00:00'
         data['surgeryDateMin'] = picker_start_date
         data['surgeryDateMax'] = picker_end_date
-        # data['ids'] = '24243968'
         data['includeProductSystems'] = True
         data['limit'] = '500'
         data['page'] = '1'
@@ -114,15 +110,22 @@ def webops_cases_request(picker_start_date, picker_end_date, branch_ids):
 
         # results
         df_results = df[df['kitAssigned'] == True]
-        df_results = df_results[['branchId', 'id', 'surgeryDate', 'caseType', 'name', 'kitId', 'kitAssigned']]
+        df_results = df_results[['branchId', 'id', 'surgeryDate', 'caseType', 'kitId', 'kitAssigned']]
         df_results['id'] = df_results['id'].astype(str)
         df_results['kitId'] = df_results['kitId'].astype(str).str.split('.', expand = True)[0]
-        df_results = df_results.rename(columns={'id': 'caseId', 'name': 'kitName'})
+        df_results = df_results.rename(columns={'id': 'caseId'})
 
-        #Join branch name, reorder columns
+        # Join branch name
         df_branches = webops_branches.webops_branches_request()
         df_results_merge = df_results.merge(df_branches, how='left')
         df_results_merge = df_results_merge.drop('branchId', axis=1)
-        df_results_merge = df_results_merge[['branchName', 'caseId', 'surgeryDate', 'caseType', 'kitName', 'kitId', 'kitAssigned']]
+        df_results_merge = df_results_merge[['branchName', 'caseId', 'surgeryDate', 'caseType', 'kitId', 'kitAssigned']]
+
+        # Join kit name
+        kitIds = list(df_results['kitId'].unique())
+        kitIds = ', '.join(kitIds)
+        df_kits = webops_kits.webops_kits_request(kitIds)
+        df_results_merge = df_results_merge.merge(df_kits, how='left')
+        df_results_merge = df_results_merge[['branchName', 'caseId', 'surgeryDate', 'caseType', 'kitName', 'kitAssigned']]
 
         return df_results_merge

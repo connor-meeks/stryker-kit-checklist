@@ -1,4 +1,4 @@
-# TODO: pull in correct kit name (as appears in webops)
+# TODO: add custom kits to df_results (ex. case id 24608188)
 # TODO: flag addons with different color
 # TODO: paginated loop to get all results
-# TODO: inital page load for api selections, then run full api (performance)
+# TODO: handle 100+ kitIds in kit request
