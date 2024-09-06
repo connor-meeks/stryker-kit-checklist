@@ -10,7 +10,7 @@ from numpy import nan
 
 import webops_api_token
 
-def webops_cases_request(picker_start_date, picker_end_date):
+def webops_cases_request(picker_start_date, picker_end_date, branch_ids):
 
     picker_start_date = picker_start_date.strftime('%Y-%m-%d') + ' 00:00'
     picker_end_date = picker_end_date.strftime('%Y-%m-%d') + ' 23:59'
@@ -26,33 +26,43 @@ def webops_cases_request(picker_start_date, picker_end_date):
 
     url = 'https://sandbox-api.webops.net/api/1.0/cases'
 
-    data = {}
-    data['timestamp']= now
-    data['messageId'] = now_id
-    data['manufacturerId']= '1015'
-    data['branchId'] = '140'
-    data['caseStatuses'] = 'Kits Assigned'
-    # data['surgeryDateMin'] = '2024-08-11 00:00'
-    # data['surgeryDateMax'] = '2024-08-17 00:00'
-    data['surgeryDateMin'] = picker_start_date
-    data['surgeryDateMax'] = picker_end_date
-    # data['ids'] = '24243968'
-    data['includeProductSystems'] = True
-    data['limit'] = '500'
-    data['page'] = '1'
+    df_append = pd.DataFrame()
 
-    headers = {}
-    headers['Access_token'] = access_token
+    for i in branch_ids:
+        data = {}
+        data['timestamp']= now
+        data['messageId'] = now_id
+        data['manufacturerId']= '1015'
+        # data['branchId'] = '140'
+        data['branchId'] = i
+        data['caseStatuses'] = 'Kits Assigned'
+        # data['surgeryDateMin'] = '2024-08-11 00:00'
+        # data['surgeryDateMax'] = '2024-08-17 00:00'
+        data['surgeryDateMin'] = picker_start_date
+        data['surgeryDateMax'] = picker_end_date
+        # data['ids'] = '24243968'
+        data['includeProductSystems'] = True
+        data['limit'] = '500'
+        data['page'] = '1'
 
-    # request
-    res = requests.post(url, json=data, headers=headers, auth=HTTPBasicAuth(username, password))
-    res.content
+        headers = {}
+        headers['Access_token'] = access_token
 
-    # convert to json
-    res_json = json.loads(res.content.decode('utf-8'))
+        # request
+        res = requests.post(url, json=data, headers=headers, auth=HTTPBasicAuth(username, password))
+        res.content
 
-    # convert json to df
-    df = pd.json_normalize(res_json)
+        # convert to json
+        res_json = json.loads(res.content.decode('utf-8'))
+
+        # convert json to df
+        df = pd.json_normalize(res_json)
+
+        # concat results    
+        df_append = pd.concat([df_append, df])
+
+    # remove empty results
+    df_append = df_append[df_append['cases'].map(len) > 0]
 
     # Explode series
     df = df.explode('cases')
