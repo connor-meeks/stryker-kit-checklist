@@ -70,8 +70,8 @@ def webops_cases_request(picker_start_date, picker_end_date, branch_ids):
     # ---
 
     # check if results
-    if type(df.cases[0]) is float: 
-        return -1
+    if df.empty: 
+        return 0
     else:
         # convert to string
         df['cases'] = df['cases'].astype(str) 

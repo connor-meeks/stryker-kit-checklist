@@ -2,4 +2,3 @@
 # TODO: flag addons with different color
 # TODO: paginated loop to get all results
 # TODO: inital page load for api selections, then run full api (performance)
-# TODO: refresh button (keep selections)

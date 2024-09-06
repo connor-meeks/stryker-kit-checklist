@@ -31,17 +31,19 @@ try:
 except:
     picker_end_date = picker_start_date
 
+# Refresh button to maintain selections
+if st.button('Refresh'):
+    st.rerun()
+
 # cases request
 if picker_start_date and picker_end_date and branch_ids:
 
     df_results = webops_cases.webops_cases_request(picker_start_date, picker_end_date, branch_ids)
     
     if type(df_results) is int:
-        if df_results == -1:
+        if df_results == 0:
             st.success('All kits have been completed!')
         else:
             'unknown response code'
     else:
         df_results
-
-
