@@ -65,7 +65,7 @@ def webops_cases_request(picker_start_date, picker_end_date, branch_ids):
     df_append = df_append[df_append['cases'].map(len) > 0]
 
     # Explode series
-    df = df.explode('cases')
+    df = df_append.explode('cases')
 
     # ---
 
