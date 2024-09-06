@@ -38,6 +38,7 @@ def webops_cases_request(picker_start_date, picker_end_date, branch_ids):
         data['surgeryDateMin'] = picker_start_date
         data['surgeryDateMax'] = picker_end_date
         data['includeProductSystems'] = True
+        data['includeCustomKits'] = True
         data['limit'] = '500'
         data['page'] = '1'
 
@@ -79,28 +80,51 @@ def webops_cases_request(picker_start_date, picker_end_date, branch_ids):
         # ---
 
         # Explode series
-        df = df.explode('productSystems')
+        df_product = df.explode('productSystems')
 
         # convert to string
-        df['productSystems'] = df['productSystems'].astype(str) 
+        df_product['productSystems'] = df_product['productSystems'].astype(str) 
 
         # map nested columns
-        df['productSystems'] = df['productSystems'].map(lambda x: eval(x) if pd.notnull(x) else x)
-        df = pd.concat([df, df.pop('productSystems').apply(pd.Series)], axis=1)
+        df_product['productSystems'] = df_product['productSystems'].map(lambda x: eval(x) if pd.notnull(x) else x)
+        df_product = pd.concat([df_product, df_product.pop('productSystems').apply(pd.Series)], axis=1)
 
         # ---
 
-        # Explode series
-        df = df.explode('kitFamilies')
+       # Explode series
+        df_product = df_product.explode('kitFamilies')
 
         # convert to string
-        df['kitFamilies'] = df['kitFamilies'].astype(str) 
+        df_product['kitFamilies'] = df_product['kitFamilies'].astype(str) 
 
         # map nested columns
-        df['kitFamilies'] = df['kitFamilies'].map(lambda x: eval(x) if pd.notnull(x) else x)
-        df = pd.concat([df, df.pop('kitFamilies').apply(pd.Series)], axis=1)
+        df_product['kitFamilies'] = df_product['kitFamilies'].map(lambda x: eval(x) if pd.notnull(x) else x)
+        df_product = pd.concat([df_product, df_product.pop('kitFamilies').apply(pd.Series)], axis=1)
 
         # ---
+
+        # Custom Kits
+        if 'customKits' in df:
+            # Explode series
+            df_custom = df.explode('customKits')
+
+            # convert to string
+            df_custom['customKits'] = df_custom['customKits'].astype(str) 
+
+            # map nested columns
+            df_custom['customKits'] = df_custom['customKits'].map(lambda x: eval(x) if pd.notnull(x) else x)
+            df_custom = pd.concat([df_custom, df_custom.pop('customKits').apply(pd.Series)], axis=1)
+
+            # combine product and custom kits
+            df_product = df_product[['branchId', 'id', 'surgeryDate', 'caseType', 'kitId']]
+            df_custom = df_custom[['branchId', 'id', 'surgeryDate', 'caseType', 'kitId']]
+            df_combined = pd.concat([df_product, df_custom])
+            df = df_combined
+
+        else:
+            df = df_product
+
+        # --- 
 
         # detect Assigned Kits
         if 'kitId' in df:
@@ -127,5 +151,8 @@ def webops_cases_request(picker_start_date, picker_end_date, branch_ids):
         df_kits = webops_kits.webops_kits_request(kitIds)
         df_results_merge = df_results_merge.merge(df_kits, how='left')
         df_results_merge = df_results_merge[['branchName', 'caseId', 'surgeryDate', 'caseType', 'kitName', 'kitAssigned']]
+
+        # sort
+        df_results_merge = df_results_merge.sort_values('caseId').reset_index(drop=True)
 
         return df_results_merge
