@@ -10,11 +10,11 @@ st.title("Stryker Kit Checklist")
 df_branches = webops_branches.webops_branches_request()
 
 options = st.multiselect(
-    "Select Branch",
-    list(df_branches['name'])
+    "Select branch",
+    list(df_branches['branchName'])
 )
 
-branch_ids = list(df_branches[df_branches['name'].isin(options)]['id'])
+branch_ids = list(df_branches[df_branches['branchName'].isin(options)]['branchId'])
 
 # date picker
 now = datetime.datetime.now()
@@ -33,6 +33,7 @@ except:
 
 # cases request
 if picker_start_date and picker_end_date and branch_ids:
+
     df_results = webops_cases.webops_cases_request(picker_start_date, picker_end_date, branch_ids)
     
     if type(df_results) is int:

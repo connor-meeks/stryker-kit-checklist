@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 from numpy import nan
 
-import webops_api_token
+import webops_api_token, webops_branches
 
 def webops_cases_request(picker_start_date, picker_end_date, branch_ids):
 
@@ -118,4 +118,10 @@ def webops_cases_request(picker_start_date, picker_end_date, branch_ids):
         df_results['id'] = df_results['id'].astype(str)
         df_results = df_results.rename(columns={'id': 'caseId', 'name': 'kitName'})
 
-        return df_results
+        #Join branch name, reorder columns
+        df_branches = webops_branches.webops_branches_request()
+        df_results_merge = df_results.merge(df_branches, how='left')
+        df_results_merge = df_results_merge.drop('branchId', axis=1)
+        df_results_merge = df_results_merge[['branchName', 'caseId', 'surgeryDate', 'caseType', 'kitName', 'kitAssigned']]
+
+        return df_results_merge

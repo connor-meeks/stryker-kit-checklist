@@ -55,7 +55,7 @@ def webops_branches_request():
     df_branches = df[df['active'] == True]
 
     # Get columns needed
-    df_branches = df_branches[['id','name']]
+    df_branches = df_branches[['id','name']].rename(columns={"id": "branchId", "name": "branchName"})
 
     # Results
     return df_branches
