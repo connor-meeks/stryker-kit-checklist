@@ -114,14 +114,15 @@ def webops_cases_request(picker_start_date, picker_end_date, branch_ids):
 
         # results
         df_results = df[df['kitAssigned'] == True]
-        df_results = df_results[['branchId', 'id', 'surgeryDate', 'caseType', 'name', 'kitAssigned']]
+        df_results = df_results[['branchId', 'id', 'surgeryDate', 'caseType', 'name', 'kitId', 'kitAssigned']]
         df_results['id'] = df_results['id'].astype(str)
+        df_results['kitId'] = df_results['kitId'].astype(str).str.split('.', expand = True)[0]
         df_results = df_results.rename(columns={'id': 'caseId', 'name': 'kitName'})
 
         #Join branch name, reorder columns
         df_branches = webops_branches.webops_branches_request()
         df_results_merge = df_results.merge(df_branches, how='left')
         df_results_merge = df_results_merge.drop('branchId', axis=1)
-        df_results_merge = df_results_merge[['branchName', 'caseId', 'surgeryDate', 'caseType', 'kitName', 'kitAssigned']]
+        df_results_merge = df_results_merge[['branchName', 'caseId', 'surgeryDate', 'caseType', 'kitName', 'kitId', 'kitAssigned']]
 
         return df_results_merge
